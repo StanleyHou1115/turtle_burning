@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六六龜龜 - 燒烏龜祈晴</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f0e6d3;
+    font-family: "Noto Serif TC", "PMingLiU", serif;
+    padding: 20px;
+    gap: 24px;
+  }
+
+  /* ---------- controls ---------- */
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .controls button {
+    padding: 12px 32px;
+    font-size: 18px;
+    font-family: inherit;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .controls button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+  .btn-burn {
+    background: linear-gradient(135deg, #ff6b35, #d32f2f);
+    color: #fff;
+  }
+  .btn-reset {
+    background: #555;
+    color: #fff;
+  }
+
+  /* ---------- A4 paper ---------- */
+  .paper-wrapper {
+    position: relative;
+    perspective: 800px;
+  }
+  .paper {
+    position: relative;
+    width: 960px;
+    height: 680px;
+    background: #fff;
+    border: 3px solid #333;
+    padding: 36px 40px;
+    overflow: hidden;
+    transform-origin: center center;
+    transition: filter .3s;
+  }
+
+  /* ---------- header ---------- */
+  .header-left {
+    position: absolute;
+    top: 30px;
+    left: 36px;
+  }
+  .header-left .title {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #222;
+  }
+  .header-left .subtitle {
+    font-size: 24px;
+    font-weight: 700;
+    margin-top: 4px;
+    letter-spacing: 4px;
+    color: #222;
+  }
+
+  /* ---------- form fields ---------- */
+  .info-fields {
+    position: absolute;
+    top: 28px;
+    right: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 5;
+  }
+  .info-fields label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #222;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .info-fields input {
+    border: none;
+    border-bottom: 1.5px solid #999;
+    outline: none;
+    font-size: 15px;
+    font-family: inherit;
+    padding: 2px 4px;
+    width: 150px;
+    background: transparent;
+  }
+
+  /* ---------- sun ---------- */
+  .sun-container {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+  }
+
+  /* ---------- turtles ---------- */
+  .turtles-area {
+    position: absolute;
+    top: 220px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+  .turtle {
+    position: absolute;
+    transition: transform .3s;
+  }
+
+  /* ---------- burning effect ---------- */
+  .burn-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* fire particles */
+  .fire-particle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  /* ash state */
+  .paper.burning {
+    /* burn handled by canvas */
+  }
+  .paper.ash {
+    background: #2a2a2a;
+    border-color: #111;
+  }
+  .paper.ash * {
+    visibility: hidden;
+  }
+  .paper.ash .ash-content {
+    visibility: visible !important;
+  }
+
+  /* keyframes removed - burn effect rendered on canvas */
+
+  /* burn edge effect via canvas */
+  .burn-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 99;
+    pointer-events: none;
+  }
+
+  /* ash pile */
+  .ash-pile {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .ash-pile.visible {
+    display: flex;
+  }
+  .ash-pile-visual {
+    width: 960px;
+    height: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ash-piece {
+    position: absolute;
+    background: #3a3a3a;
+    border-radius: 2px;
+    opacity: 0;
+  }
+  .ash-pile p {
+    font-size: 20px;
+    color: #666;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button class="btn-burn" onclick="startBurn()">&#x1F525; 燒烏龜祈晴</button>
+  <button class="btn-reset" onclick="resetPaper()">&#x21BB; 重新來過</button>
+</div>
+
+<div class="paper-wrapper">
+  <div class="paper" id="paper">
+    <!-- header left -->
+    <div class="header-left">
+      <div class="title">六六龜龜</div>
+      <div class="subtitle">萬事順利</div>
+    </div>
+
+    <!-- info fields -->
+    <div class="info-fields">
+      <label>日期：<input type="text" id="dateRange" placeholder="例：4/19 - 4/21"></label>
+      <label>地點：<input type="text" id="location" placeholder="例：墾丁"></label>
+      <label>天氣：<input type="text" id="weather" placeholder="例：晴天"></label>
+      <label>活動：<input type="text" id="activity" placeholder="例：畢業旅行"></label>
+    </div>
+
+    <!-- sun -->
+    <div class="sun-container">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <!-- rays -->
+        <g fill="#FFD54F" stroke="#E0A800" stroke-width="1.5">
+          <polygon points="100,8 110,40 90,40"/>
+          <polygon points="100,192 110,160 90,160"/>
+          <polygon points="8,100 40,90 40,110"/>
+          <polygon points="192,100 160,90 160,110"/>
+          <polygon points="35,35 58,52 52,58"/>
+          <polygon points="165,35 148,52 142,58" transform="rotate(0,165,35)"/>
+          <polygon points="165,35 142,52 148,58"/>
+          <polygon points="35,165 52,142 58,148"/>
+          <polygon points="165,165 142,148 148,142"/>
+          <!-- extra rays -->
+          <polygon points="100,2 106,30 94,30"/>
+          <polygon points="30,30 50,48 44,54"/>
+          <polygon points="170,30 150,48 156,54"/>
+          <polygon points="30,170 48,150 54,156"/>
+          <polygon points="170,170 156,150 150,156"/>
+          <polygon points="2,100 30,94 30,106"/>
+          <polygon points="198,100 170,94 170,106"/>
+          <polygon points="100,198 106,170 94,170"/>
+        </g>
+        <!-- face -->
+        <circle cx="100" cy="100" r="62" fill="#FFD54F" stroke="#E0A800" stroke-width="2.5"/>
+        <!-- sunglasses -->
+        <rect x="62" y="85" width="30" height="22" rx="5" fill="#333" stroke="#222" stroke-width="1.5"/>
+        <rect x="108" y="85" width="30" height="22" rx="5" fill="#333" stroke="#222" stroke-width="1.5"/>
+        <line x1="92" y1="94" x2="108" y2="94" stroke="#333" stroke-width="2.5"/>
+        <line x1="62" y1="94" x2="50" y2="88" stroke="#333" stroke-width="2"/>
+        <line x1="138" y1="94" x2="150" y2="88" stroke="#333" stroke-width="2"/>
+        <!-- smile -->
+        <path d="M 78 118 Q 100 138 122 118" fill="none" stroke="#B8860B" stroke-width="3" stroke-linecap="round"/>
+        <!-- cheeks -->
+        <circle cx="72" cy="116" r="6" fill="#FFB74D" opacity="0.5"/>
+        <circle cx="128" cy="116" r="6" fill="#FFB74D" opacity="0.5"/>
+      </svg>
+    </div>
+
+    <!-- turtles area -->
+    <div class="turtles-area" id="turtlesArea"></div>
+
+    <!-- burn canvas overlay -->
+    <canvas class="burn-canvas" id="burnCanvas"></canvas>
+  </div>
+</div>
+
+<div class="ash-pile" id="ashPile">
+  <div class="ash-pile-visual" id="ashVisual"></div>
+  <p>烏龜已化為灰燼，祈願天氣放晴！</p>
+</div>
+
+<script>
+// --- Sun center position (relative to paper) ---
+// Sun is at paper center-x, ~160px from top of paper
+const SUN_X = 480;
+const SUN_Y = 130;
+
+// --- Calculate angle from turtle to sun ---
+function angleToSun(tx, ty, turtleSize) {
+  // turtlesArea starts at top:310, so actual paper y = ty + 310
+  const turtleCenterX = tx + turtleSize / 2;
+  const turtleCenterY = (ty + 220) + turtleSize / 2;
+  const dx = SUN_X - turtleCenterX;
+  const dy = SUN_Y - turtleCenterY;
+  // atan2 gives angle; turtle's "head" points up (negative y) at 0deg
+  // so we offset by -90 deg since atan2(0,-1)=-PI/2
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  // SVG turtle head points up (toward -Y), which is -90deg in atan2 coords
+  return angle + 90;
+}
+
+// --- Cute turtle SVG generator (head at top = 0deg, rotation applied outside) ---
+function turtleSVG(size, angleDeg, variant) {
+  const r = angleDeg || 0;
+  const shellWords = ['好天氣', '天晴', '大太陽', '放晴', '出太陽', '晴天'];
+  const word = shellWords[variant % shellWords.length];
+
+  // Blush cheek marks (two small lines)
+  const blushL = `<line x1="19" y1="12" x2="20.5" y2="12" stroke-width="1" stroke-linecap="round" opacity="0.5"/>`;
+  const blushR = `<line x1="29.5" y1="12" x2="31" y2="12" stroke-width="1" stroke-linecap="round" opacity="0.5"/>`;
+
+  return `<svg width="${size}" height="${size}" viewBox="0 0 50 50" style="transform:rotate(${r}deg)">
+    <g stroke="#333" fill="none">
+      <!-- round cute shell -->
+      <ellipse cx="25" cy="27" rx="13" ry="11" stroke-width="2"/>
+      <!-- shell text -->
+      <text x="25" y="${word.length <= 2 ? 29 : 28}" text-anchor="middle" dominant-baseline="middle"
+        font-size="${word.length <= 2 ? 7 : 5.5}" font-family="'Noto Serif TC','PMingLiU',serif"
+        fill="#333" stroke="none" font-weight="700">${word}</text>
+      <!-- big round head (cute = bigger head) -->
+      <circle cx="25" cy="12" r="6.5" stroke-width="1.8" fill="none"/>
+      <!-- big sparkly eyes -->
+      <circle cx="22" cy="11" r="1.8" fill="#333" stroke="none"/>
+      <circle cx="28" cy="11" r="1.8" fill="#333" stroke="none"/>
+      <!-- eye highlights -->
+      <circle cx="22.7" cy="10.2" r="0.6" fill="#fff" stroke="none"/>
+      <circle cx="28.7" cy="10.2" r="0.6" fill="#fff" stroke="none"/>
+      <!-- happy smile -->
+      <path d="M22 14.5 Q25 18 28 14.5" fill="none" stroke="#333" stroke-width="1.4" stroke-linecap="round"/>
+      <!-- blush -->
+      ${blushL}${blushR}
+      <!-- chubby front legs -->
+      <ellipse cx="11" cy="20" rx="5" ry="3" transform="rotate(-30 11 20)" stroke-width="1.6"/>
+      <ellipse cx="39" cy="20" rx="5" ry="3" transform="rotate(30 39 20)" stroke-width="1.6"/>
+      <!-- chubby back legs -->
+      <ellipse cx="12" cy="34" rx="4.5" ry="2.8" transform="rotate(30 12 34)" stroke-width="1.6"/>
+      <ellipse cx="38" cy="34" rx="4.5" ry="2.8" transform="rotate(-30 38 34)" stroke-width="1.6"/>
+      <!-- cute tiny tail -->
+      <path d="M25 38 Q26 41.5 27 40" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+  </svg>`;
+}
+
+// --- Place 66 turtles, all facing the sun ---
+function placeTurtles() {
+  const area = document.getElementById('turtlesArea');
+  area.innerHTML = '';
+  const count = 66;
+  const positions = [];
+
+  for (let i = 0; i < count; i++) {
+    const size = 50 + Math.random() * 30;
+    const radius = size / 2;
+    let x, y, attempts = 0;
+    let placed = false;
+    do {
+      x = Math.random() * (900 - size) + 15;
+      y = Math.random() * (410 - size) + 10;
+      attempts++;
+      const cx = x + radius;
+      const cy = y + radius;
+      const overlaps = positions.some(p => {
+        const dx = p.cx - cx;
+        const dy = p.cy - cy;
+        const minDist = p.r + radius + 4; // 4px gap
+        return (dx * dx + dy * dy) < (minDist * minDist);
+      });
+      if (!overlaps) { placed = true; break; }
+    } while (attempts < 200);
+    if (!placed) continue; // skip if can't find space
+    positions.push({ x, y, cx: x + radius, cy: y + radius, r: radius, size });
+
+    const angle = angleToSun(x, y, size);
+
+    const div = document.createElement('div');
+    div.className = 'turtle';
+    div.style.left = x + 'px';
+    div.style.top = y + 'px';
+    div.innerHTML = turtleSVG(size, angle, i);
+    area.appendChild(div);
+  }
+}
+placeTurtles();
+
+// --- Burning animation ---
+let burning = false;
+
+function startBurn() {
+  if (burning) return;
+  burning = true;
+
+  const paper = document.getElementById('paper');
+  const canvas = document.getElementById('burnCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = paper.offsetWidth;
+  canvas.height = paper.offsetHeight;
+
+  // ===== Burn from bottom-left to top-right =====
+  const w = canvas.width, h = canvas.height;
+  const particles = [];
+
+  // Burn distance: project point onto the bottom-left→top-right diagonal
+  // 0 at bottom-left corner, maxDist at top-right corner
+  const diag = Math.sqrt(w * w + h * h);
+  function burnDist(px, py) {
+    return (px / w + (1 - py / h)) * 0.5 * diag;
+  }
+  const maxDist = burnDist(w, 0);
+
+  // Noise for irregular burn edge
+  const noiseTable = new Float32Array(512);
+  for (let i = 0; i < 512; i++) noiseTable[i] = Math.random() * 2 - 1;
+  function noise(x, y) {
+    const ix = ((x | 0) & 255), iy = ((y | 0) & 255);
+    const fx = x - (x | 0), fy = y - (y | 0);
+    const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    const a = noiseTable[ix + iy & 511], b = noiseTable[(ix + 1) + iy & 511];
+    const c = noiseTable[ix + (iy + 1) & 511], d = noiseTable[(ix + 1) + (iy + 1) & 511];
+    return (a * (1 - sx) + b * sx) * (1 - sy) + (c * (1 - sx) + d * sx) * sy;
+  }
+  function fbm(x, y) {
+    return noise(x, y) * 0.6 + noise(x * 2, y * 2) * 0.25 + noise(x * 4, y * 4) * 0.15;
+  }
+
+  // Pre-render burn mask using ImageData for pixel-level control
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = w; offCanvas.height = h;
+  const offCtx = offCanvas.getContext('2d');
+
+  const startTime = performance.now();
+  const totalDuration = 5000;
+
+  function drawBurn(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / totalDuration, 1);
+    // Front position moves from 0 to beyond maxDist
+    const front = -40 + progress * (maxDist + 80);
+
+    ctx.clearRect(0, 0, w, h);
+
+    // ====== 1. BURN MASK via ImageData (low-res for speed) ======
+    const scale = 4; // render at 1/4 resolution
+    const sw = Math.ceil(w / scale), sh = Math.ceil(h / scale);
+    offCanvas.width = sw; offCanvas.height = sh;
+    const imgData = offCtx.createImageData(sw, sh);
+    const data = imgData.data;
+
+    for (let sy = 0; sy < sh; sy++) {
+      for (let sx = 0; sx < sw; sx++) {
+        const px = sx * scale, py = sy * scale;
+        // Noise offset makes the edge irregular
+        const n = fbm(px * 0.008, py * 0.01) * 60;
+        const d = burnDist(px, py) + n;
+        const idx = (sy * sw + sx) * 4;
+
+        if (d < front - 35) {
+          // Fully charred: dark with subtle variation
+          const age = Math.min((front - 35 - d) / maxDist * 4, 1);
+          const v = 8 + (1 - age) * 20 + noise(px * 0.05, py * 0.05) * 10;
+          data[idx] = v * 0.8;
+          data[idx + 1] = v * 0.3;
+          data[idx + 2] = v * 0.1;
+          data[idx + 3] = Math.min(age * 1.5, 1) * 255;
+        } else if (d < front - 15) {
+          // Glowing ember zone: red/orange
+          const t = (d - (front - 35)) / 20;
+          data[idx] = 120 + t * 135;
+          data[idx + 1] = 30 + t * 50;
+          data[idx + 2] = 0;
+          data[idx + 3] = 220;
+        } else if (d < front + 5) {
+          // Bright fire edge: yellow-white
+          const t = (d - (front - 15)) / 20;
+          data[idx] = 255;
+          data[idx + 1] = 180 + t * 50;
+          data[idx + 2] = 50 + t * 80;
+          data[idx + 3] = Math.round((1 - t) * 230);
+        } else if (d < front + 50) {
+          // Heat zone: paper yellowing
+          const t = (d - (front + 5)) / 45;
+          data[idx] = 180;
+          data[idx + 1] = 140;
+          data[idx + 2] = 60;
+          data[idx + 3] = Math.round((1 - t) * 50);
+        }
+        // else: transparent, untouched paper
+      }
+    }
+    offCtx.putImageData(imgData, 0, 0);
+    // Draw scaled up with smoothing
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(offCanvas, 0, 0, w, h);
+
+    // ====== 2. BRIGHT GLOW along burn edge ======
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const glowSteps = 60;
+    for (let i = 0; i <= glowSteps; i++) {
+      const t = i / glowSteps;
+      // Walk along the burn front line (diagonal perpendicular)
+      const lx = t * w;
+      const ly = h - (front - burnDist(lx, 0)) / (burnDist(0, 0) - burnDist(0, h)) * h;
+      // Find actual y where burnDist(lx, y) ≈ front
+      const targetY = h * (1 - (2 * front / diag - lx / w));
+      const n = fbm(lx * 0.008, targetY * 0.01) * 60;
+      const fy = targetY + n * (h / diag);
+      const fx = lx;
+
+      if (fx < -20 || fx > w + 20 || fy < -40 || fy > h + 40) continue;
+
+      // White-hot core
+      const g1 = ctx.createRadialGradient(fx, fy, 0, fx, fy, 8);
+      g1.addColorStop(0, 'rgba(255,255,220,0.7)');
+      g1.addColorStop(0.4, 'rgba(255,200,50,0.4)');
+      g1.addColorStop(1, 'rgba(255,80,0,0)');
+      ctx.fillStyle = g1;
+      ctx.fillRect(fx - 8, fy - 8, 16, 16);
+
+      // Orange glow
+      const g2 = ctx.createRadialGradient(fx, fy, 0, fx, fy, 30);
+      g2.addColorStop(0, 'rgba(255,120,0,0.35)');
+      g2.addColorStop(0.5, 'rgba(200,40,0,0.15)');
+      g2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g2;
+      ctx.fillRect(fx - 30, fy - 30, 60, 60);
+    }
+    ctx.restore();
+
+    // ====== 3. FLAME PARTICLES ======
+    if (progress > 0.02 && progress < 0.97) {
+      for (let i = 0; i < 8; i++) {
+        const lx = Math.random() * w;
+        const targetY = h * (1 - (2 * front / diag - lx / w));
+        const n = fbm(lx * 0.008, targetY * 0.01) * 60;
+        const fy = targetY + n * (h / diag);
+        if (fy < -20 || fy > h + 20) continue;
+
+        particles.push({
+          type: 'flame', x: lx + (Math.random() - 0.5) * 16, y: fy,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: -Math.random() * 4.5 - 1.5,
+          size: Math.random() * 12 + 6,
+          life: 1, decay: 0.015 + Math.random() * 0.02,
+          hue: 10 + Math.random() * 30
+        });
+      }
+      // Tall flame tongues
+      if (Math.random() < 0.5) {
+        const lx = Math.random() * w;
+        const targetY = h * (1 - (2 * front / diag - lx / w));
+        const n = fbm(lx * 0.008, targetY * 0.01) * 60;
+        const fy = targetY + n * (h / diag);
+        if (fy > -20 && fy < h + 20) {
+          particles.push({
+            type: 'flame', x: lx, y: fy,
+            vx: (Math.random() - 0.5) * 0.6,
+            vy: -Math.random() * 6 - 4,
+            size: Math.random() * 18 + 14,
+            life: 1, decay: 0.008 + Math.random() * 0.008,
+            hue: 5 + Math.random() * 15
+          });
+        }
+      }
+      // Ember sparks
+      if (Math.random() < 0.4) {
+        const lx = Math.random() * w;
+        const targetY = h * (1 - (2 * front / diag - lx / w));
+        const n = fbm(lx * 0.008, targetY * 0.01) * 60;
+        const fy = targetY + n * (h / diag);
+        if (fy > -20 && fy < h + 20) {
+          for (let e = 0; e < 3; e++) {
+            particles.push({
+              type: 'ember',
+              x: lx + (Math.random() - 0.5) * 20, y: fy + (Math.random() - 0.5) * 10,
+              vx: (Math.random() - 0.5) * 5,
+              vy: -Math.random() * 7 - 2,
+              size: 1.5 + Math.random() * 2.5,
+              life: 1, decay: 0.015 + Math.random() * 0.02,
+              hue: 20 + Math.random() * 30
+            });
+          }
+        }
+      }
+    }
+
+    // Smoke
+    if (progress > 0.08 && Math.random() < 0.5) {
+      const lx = Math.random() * w * 0.8;
+      const smokeY = h * (1 - (2 * (front - 60) / diag - lx / w));
+      if (smokeY > 0 && smokeY < h && burnDist(lx, smokeY) < front - 40) {
+        particles.push({
+          type: 'smoke', x: lx, y: smokeY,
+          vx: 0.2 + Math.random() * 0.5,
+          vy: -0.8 - Math.random() * 1.5,
+          size: 10 + Math.random() * 12,
+          life: 1, decay: 0.004 + Math.random() * 0.004,
+          opacity: 0.04 + Math.random() * 0.08
+        });
+      }
+    }
+
+    // --- Draw flames (additive) ---
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      if (p.type !== 'flame') continue;
+      p.x += p.vx; p.y += p.vy;
+      p.vy -= 0.06;
+      p.vx *= 0.97;
+      p.life -= p.decay;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+
+      const sz = p.size * p.life;
+      const rx = sz * 0.45, ry = sz * 1.3;
+      const grad = ctx.createRadialGradient(p.x, p.y - ry * 0.15, 0, p.x, p.y - ry * 0.1, ry);
+      const b = p.life;
+      grad.addColorStop(0, `hsla(48,100%,95%,${b * 0.85})`);
+      grad.addColorStop(0.12, `hsla(42,100%,72%,${b * 0.75})`);
+      grad.addColorStop(0.3, `hsla(${p.hue + 8},100%,55%,${b * 0.6})`);
+      grad.addColorStop(0.55, `hsla(${p.hue},100%,38%,${b * 0.35})`);
+      grad.addColorStop(0.8, `hsla(${p.hue - 8},100%,18%,${b * 0.12})`);
+      grad.addColorStop(1, 'hsla(0,100%,8%,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y - ry * 0.25, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // --- Draw embers (additive) ---
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      if (p.type !== 'ember') continue;
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.1;
+      p.life -= p.decay;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+
+      const sz = p.size * p.life;
+      // Bright dot
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, sz, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue},100%,${55 + p.life * 35}%,${p.life})`;
+      ctx.fill();
+      // Small glow
+      const eg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, sz * 4);
+      eg.addColorStop(0, `hsla(${p.hue},100%,50%,${p.life * 0.25})`);
+      eg.addColorStop(1, 'hsla(0,0%,0%,0)');
+      ctx.fillStyle = eg;
+      ctx.fillRect(p.x - sz * 4, p.y - sz * 4, sz * 8, sz * 8);
+    }
+    ctx.restore();
+
+    // --- Draw smoke (normal blend) ---
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      if (p.type !== 'smoke') continue;
+      p.x += p.vx; p.y += p.vy;
+      p.life -= p.decay;
+      p.size += 0.35;
+      if (p.life <= 0 || p.y < -60) { particles.splice(i, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(45,40,35,${p.opacity * p.life})`;
+      ctx.fill();
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(drawBurn);
+    } else {
+      finishBurn();
+    }
+  }
+
+  paper.style.transition = 'none';
+  requestAnimationFrame(drawBurn);
+}
+
+function finishBurn() {
+  const paper = document.getElementById('paper');
+  paper.classList.remove('burning');
+  paper.classList.add('ash');
+
+  // Create crumble / ash falling animation
+  const canvas = document.getElementById('burnCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Fill with dark ash color
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Add ash texture
+  for (let i = 0; i < 500; i++) {
+    const x = Math.random() * canvas.width;
+    const y = Math.random() * canvas.height;
+    const gray = Math.random() * 40 + 10;
+    ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+    ctx.fillRect(x, y, Math.random() * 4 + 1, Math.random() * 4 + 1);
+  }
+
+  // Show crumble after a moment
+  setTimeout(() => {
+    crumblePaper();
+  }, 800);
+}
+
+function crumblePaper() {
+  const paper = document.getElementById('paper');
+  const ashPile = document.getElementById('ashPile');
+  const ashVisual = document.getElementById('ashVisual');
+
+  // Create ash pieces falling down
+  ashVisual.innerHTML = '';
+  const pieceCount = 80;
+
+  for (let i = 0; i < pieceCount; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'ash-piece';
+    const w = Math.random() * 40 + 10;
+    const h = Math.random() * 8 + 2;
+    const x = Math.random() * 920 + 20;
+    const gray = Math.random() * 50 + 20;
+    piece.style.width = w + 'px';
+    piece.style.height = h + 'px';
+    piece.style.left = x + 'px';
+    piece.style.bottom = (Math.random() * 60 + 10) + 'px';
+    piece.style.background = `rgb(${gray},${gray},${gray})`;
+    piece.style.borderRadius = Math.random() * 4 + 'px';
+    piece.style.transform = `rotate(${Math.random() * 180}deg)`;
+    ashVisual.appendChild(piece);
+  }
+
+  // Animate paper crumbling and ash pile appearing
+  paper.style.transition = 'transform 1.5s ease-in, opacity 1.5s ease-in';
+  paper.style.transform = 'scale(0.3) translateY(100px)';
+  paper.style.opacity = '0';
+
+  setTimeout(() => {
+    paper.style.display = 'none';
+    ashPile.classList.add('visible');
+
+    // Animate ash pieces appearing
+    const pieces = ashVisual.querySelectorAll('.ash-piece');
+    pieces.forEach((p, i) => {
+      setTimeout(() => {
+        p.style.transition = 'opacity 0.5s';
+        p.style.opacity = '0.8';
+      }, i * 15);
+    });
+  }, 1500);
+}
+
+function resetPaper() {
+  burning = false;
+  const paper = document.getElementById('paper');
+  const canvas = document.getElementById('burnCanvas');
+  const ctx = canvas.getContext('2d');
+  const ashPile = document.getElementById('ashPile');
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  paper.classList.remove('burning', 'ash');
+  paper.style.transition = 'none';
+  paper.style.transform = '';
+  paper.style.opacity = '';
+  paper.style.display = '';
+  paper.style.filter = '';
+
+  ashPile.classList.remove('visible');
+
+  // Force reflow
+  void paper.offsetHeight;
+  paper.style.transition = '';
+
+  placeTurtles();
+}
+</script>
+</body>
+</html>
