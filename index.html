@@ -120,6 +120,74 @@
     z-index: 2;
   }
 
+  /* ---------- dark clouds ---------- */
+  .clouds-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 260px;
+    pointer-events: none;
+    z-index: 3;
+    overflow: hidden;
+  }
+  .dark-cloud {
+    position: absolute;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  /* Clouds gather on load and hold. Disperse only when .dispersing is set. */
+  .dark-cloud.c1 { top: 60px; left: 300px; animation: cloudGather 1.2s ease-out forwards; }
+  .dark-cloud.c2 { top: 30px; left: 420px; animation: cloudGather 1.4s ease-out .1s forwards; }
+  .dark-cloud.c3 { top: 80px; left: 520px; animation: cloudGather 1.3s ease-out .2s forwards; }
+  .dark-cloud.c4 { top: 20px; left: 250px; animation: cloudGather 1.5s ease-out .3s forwards; }
+  .dark-cloud.c5 { top: 50px; left: 600px; animation: cloudGather 1.5s ease-out .15s forwards; }
+
+  .clouds-layer.dispersing .dark-cloud.c1 { animation: cloudDisperseLeft    3.2s ease-in forwards; }
+  .clouds-layer.dispersing .dark-cloud.c2 { animation: cloudDisperseUp      3.4s ease-in forwards; }
+  .clouds-layer.dispersing .dark-cloud.c3 { animation: cloudDisperseRight   3.2s ease-in .1s forwards; }
+  .clouds-layer.dispersing .dark-cloud.c4 { animation: cloudDisperseLeftUp  3.6s ease-in .2s forwards; }
+  .clouds-layer.dispersing .dark-cloud.c5 { animation: cloudDisperseRightUp 3.6s ease-in .1s forwards; }
+
+  @keyframes cloudGather {
+    0%   { opacity: 0; transform: translate(0,-40px) scale(.8); }
+    100% { opacity: .92; transform: translate(0,0) scale(1); }
+  }
+  @keyframes cloudDisperseLeft {
+    0%   { opacity: .92; transform: translate(0,0) scale(1); filter: blur(0); }
+    100% { opacity: 0;   transform: translate(-340px,-20px) scale(1.4); filter: blur(6px); }
+  }
+  @keyframes cloudDisperseRight {
+    0%   { opacity: .92; transform: translate(0,0) scale(1); filter: blur(0); }
+    100% { opacity: 0;   transform: translate(340px,-20px) scale(1.4); filter: blur(6px); }
+  }
+  @keyframes cloudDisperseUp {
+    0%   { opacity: .92; transform: translate(0,0) scale(1); filter: blur(0); }
+    100% { opacity: 0;   transform: translate(0,-140px) scale(1.5); filter: blur(7px); }
+  }
+  @keyframes cloudDisperseLeftUp {
+    0%   { opacity: .92; transform: translate(0,0) scale(1); filter: blur(0); }
+    100% { opacity: 0;   transform: translate(-260px,-110px) scale(1.5); filter: blur(6px); }
+  }
+  @keyframes cloudDisperseRightUp {
+    0%   { opacity: .92; transform: translate(0,0) scale(1); filter: blur(0); }
+    100% { opacity: 0;   transform: translate(260px,-110px) scale(1.5); filter: blur(6px); }
+  }
+
+  /* Sun starts dimmed while clouds cover it, then brightens together with disperse */
+  .sun-container svg {
+    filter: brightness(.55) saturate(.6);
+    transition: filter 2.2s ease-in;
+  }
+  .paper.sun-shining .sun-container svg {
+    filter: brightness(1) saturate(1) drop-shadow(0 0 12px #ffd54f);
+  }
+
+  .btn-disperse {
+    background: linear-gradient(135deg, #6b7a8f, #3b4a5a);
+    color: #fff;
+  }
+
   /* ---------- turtles ---------- */
   .turtles-area {
     position: absolute;
@@ -208,6 +276,7 @@
 
 <div class="controls">
   <button class="btn-burn" onclick="startBurn()">&#x1F525; 燒烏龜祈晴</button>
+  <button class="btn-disperse" onclick="playClouds()">&#x2601;&#xFE0F; 烏雲退散</button>
   <button class="btn-reset" onclick="resetPaper()">&#x21BB; 重新來過</button>
 </div>
 
@@ -225,6 +294,74 @@
       <label>地點：<input type="text" id="location" placeholder="例：墾丁"></label>
       <label>天氣：<input type="text" id="weather" placeholder="例：晴天"></label>
       <label>活動：<input type="text" id="activity" placeholder="例：畢業旅行"></label>
+    </div>
+
+    <!-- dark clouds (烏雲退散) -->
+    <div class="clouds-layer" id="cloudsLayer">
+      <svg class="dark-cloud c1" width="200" height="110" viewBox="0 0 200 110">
+        <defs>
+          <radialGradient id="cg1" cx="50%" cy="45%" r="60%">
+            <stop offset="0%"  stop-color="#6b7480"/>
+            <stop offset="60%" stop-color="#3d4654"/>
+            <stop offset="100%" stop-color="#222a36"/>
+          </radialGradient>
+        </defs>
+        <g fill="url(#cg1)">
+          <ellipse cx="55"  cy="65" rx="42" ry="30"/>
+          <ellipse cx="100" cy="50" rx="50" ry="36"/>
+          <ellipse cx="145" cy="62" rx="44" ry="32"/>
+          <ellipse cx="80"  cy="78" rx="36" ry="22"/>
+          <ellipse cx="130" cy="80" rx="38" ry="22"/>
+        </g>
+      </svg>
+      <svg class="dark-cloud c2" width="240" height="120" viewBox="0 0 240 120">
+        <defs>
+          <radialGradient id="cg2" cx="50%" cy="45%" r="60%">
+            <stop offset="0%"  stop-color="#5a6371"/>
+            <stop offset="60%" stop-color="#333c4a"/>
+            <stop offset="100%" stop-color="#1b2230"/>
+          </radialGradient>
+        </defs>
+        <g fill="url(#cg2)">
+          <ellipse cx="60"  cy="70" rx="50" ry="34"/>
+          <ellipse cx="120" cy="55" rx="60" ry="42"/>
+          <ellipse cx="180" cy="68" rx="52" ry="36"/>
+          <ellipse cx="95"  cy="88" rx="42" ry="24"/>
+          <ellipse cx="160" cy="90" rx="44" ry="24"/>
+        </g>
+      </svg>
+      <svg class="dark-cloud c3" width="210" height="115" viewBox="0 0 210 115">
+        <defs>
+          <radialGradient id="cg3" cx="50%" cy="45%" r="60%">
+            <stop offset="0%"  stop-color="#687080"/>
+            <stop offset="60%" stop-color="#3a4350"/>
+            <stop offset="100%" stop-color="#20273234"/>
+          </radialGradient>
+        </defs>
+        <g fill="url(#cg3)">
+          <ellipse cx="55"  cy="68" rx="45" ry="32"/>
+          <ellipse cx="105" cy="52" rx="55" ry="38"/>
+          <ellipse cx="155" cy="66" rx="48" ry="34"/>
+          <ellipse cx="85"  cy="84" rx="38" ry="22"/>
+          <ellipse cx="140" cy="86" rx="40" ry="22"/>
+        </g>
+      </svg>
+      <svg class="dark-cloud c4" width="170" height="95" viewBox="0 0 170 95">
+        <g fill="#3b4553">
+          <ellipse cx="45"  cy="55" rx="38" ry="26"/>
+          <ellipse cx="90"  cy="42" rx="44" ry="32"/>
+          <ellipse cx="130" cy="56" rx="38" ry="28"/>
+          <ellipse cx="75"  cy="70" rx="32" ry="18"/>
+        </g>
+      </svg>
+      <svg class="dark-cloud c5" width="170" height="95" viewBox="0 0 170 95">
+        <g fill="#414b5a">
+          <ellipse cx="45"  cy="55" rx="38" ry="26"/>
+          <ellipse cx="90"  cy="42" rx="44" ry="32"/>
+          <ellipse cx="130" cy="56" rx="38" ry="28"/>
+          <ellipse cx="95"  cy="72" rx="34" ry="18"/>
+        </g>
+      </svg>
     </div>
 
     <!-- sun -->
@@ -387,6 +524,24 @@ function placeTurtles() {
 }
 placeTurtles();
 
+// --- Replay "烏雲退散" animation only (without burn) ---
+function playClouds() {
+  const layer = document.getElementById('cloudsLayer');
+  const paper = document.getElementById('paper');
+  if (!layer) return;
+  // Reset to gathered state, then trigger disperse on next frame
+  layer.classList.remove('dispersing');
+  paper.classList.remove('sun-shining');
+  const clone = layer.cloneNode(true); // restart gather animation
+  layer.parentNode.replaceChild(clone, layer);
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.getElementById('cloudsLayer').classList.add('dispersing');
+      paper.classList.add('sun-shining');
+    }, 1600);
+  });
+}
+
 // --- Burning animation ---
 let burning = false;
 
@@ -394,7 +549,12 @@ function startBurn() {
   if (burning) return;
   burning = true;
 
+  // Trigger 烏雲退散 at the same time as the burn
+  const cloudsLayer = document.getElementById('cloudsLayer');
+  if (cloudsLayer) cloudsLayer.classList.add('dispersing');
+
   const paper = document.getElementById('paper');
+  paper.classList.add('sun-shining');
   const canvas = document.getElementById('burnCanvas');
   const ctx = canvas.getContext('2d');
   canvas.width = paper.offsetWidth;
@@ -768,12 +928,20 @@ function resetPaper() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  paper.classList.remove('burning', 'ash');
+  paper.classList.remove('burning', 'ash', 'sun-shining');
   paper.style.transition = 'none';
   paper.style.transform = '';
   paper.style.opacity = '';
   paper.style.display = '';
   paper.style.filter = '';
+
+  // Restore clouds to gathered state
+  const cloudsLayer = document.getElementById('cloudsLayer');
+  if (cloudsLayer) {
+    cloudsLayer.classList.remove('dispersing');
+    const clone = cloudsLayer.cloneNode(true);
+    cloudsLayer.parentNode.replaceChild(clone, cloudsLayer);
+  }
 
   ashPile.classList.remove('visible');
 
