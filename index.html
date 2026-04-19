@@ -306,39 +306,43 @@ function turtleSVG(size, angleDeg, variant) {
   const shellWords = ['好天氣', '天晴', '大太陽', '放晴', '出太陽', '晴天'];
   const word = shellWords[variant % shellWords.length];
 
-  // Blush cheek marks (two small lines)
-  const blushL = `<line x1="19" y1="12" x2="20.5" y2="12" stroke-width="1" stroke-linecap="round" opacity="0.5"/>`;
-  const blushR = `<line x1="29.5" y1="12" x2="31" y2="12" stroke-width="1" stroke-linecap="round" opacity="0.5"/>`;
+  // Cartoon turtle palette (matches reference):
+  // dark shell green, light body green, grid-line green
+  const shellDark = '#1f8a3a';
+  const bodyGreen = '#a4cb4e';
+  const gridGreen = '#4caf50';
 
   return `<svg width="${size}" height="${size}" viewBox="0 0 50 50" style="transform:rotate(${r}deg)">
-    <g stroke="#333" fill="none">
-      <!-- round cute shell -->
-      <ellipse cx="25" cy="27" rx="13" ry="11" stroke-width="2"/>
-      <!-- shell text -->
-      <text x="25" y="${word.length <= 2 ? 29 : 28}" text-anchor="middle" dominant-baseline="middle"
-        font-size="${word.length <= 2 ? 7 : 5.5}" font-family="'Noto Serif TC','PMingLiU',serif"
-        fill="#333" stroke="none" font-weight="700">${word}</text>
-      <!-- big round head (cute = bigger head) -->
-      <circle cx="25" cy="12" r="6.5" stroke-width="1.8" fill="none"/>
-      <!-- big sparkly eyes -->
-      <circle cx="22" cy="11" r="1.8" fill="#333" stroke="none"/>
-      <circle cx="28" cy="11" r="1.8" fill="#333" stroke="none"/>
-      <!-- eye highlights -->
-      <circle cx="22.7" cy="10.2" r="0.6" fill="#fff" stroke="none"/>
-      <circle cx="28.7" cy="10.2" r="0.6" fill="#fff" stroke="none"/>
-      <!-- happy smile -->
-      <path d="M22 14.5 Q25 18 28 14.5" fill="none" stroke="#333" stroke-width="1.4" stroke-linecap="round"/>
-      <!-- blush -->
-      ${blushL}${blushR}
-      <!-- chubby front legs -->
-      <ellipse cx="11" cy="20" rx="5" ry="3" transform="rotate(-30 11 20)" stroke-width="1.6"/>
-      <ellipse cx="39" cy="20" rx="5" ry="3" transform="rotate(30 39 20)" stroke-width="1.6"/>
-      <!-- chubby back legs -->
-      <ellipse cx="12" cy="34" rx="4.5" ry="2.8" transform="rotate(30 12 34)" stroke-width="1.6"/>
-      <ellipse cx="38" cy="34" rx="4.5" ry="2.8" transform="rotate(-30 38 34)" stroke-width="1.6"/>
-      <!-- cute tiny tail -->
-      <path d="M25 38 Q26 41.5 27 40" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- tail -->
+    <path d="M25 39 L23 44 L27 44 Z" fill="${bodyGreen}"/>
+    <!-- back legs -->
+    <ellipse cx="13" cy="35" rx="4.2" ry="2.8" transform="rotate(35 13 35)" fill="${bodyGreen}"/>
+    <ellipse cx="37" cy="35" rx="4.2" ry="2.8" transform="rotate(-35 37 35)" fill="${bodyGreen}"/>
+    <!-- front legs -->
+    <ellipse cx="10" cy="20" rx="4.8" ry="3" transform="rotate(-30 10 20)" fill="${bodyGreen}"/>
+    <ellipse cx="40" cy="20" rx="4.8" ry="3" transform="rotate(30 40 20)" fill="${bodyGreen}"/>
+    <!-- head -->
+    <circle cx="25" cy="11" r="6.8" fill="${bodyGreen}"/>
+    <!-- eyes (simple black dots like reference) -->
+    <circle cx="22.2" cy="10.5" r="1.2" fill="#111"/>
+    <circle cx="27.8" cy="10.5" r="1.2" fill="#111"/>
+    <!-- dark shell base -->
+    <ellipse cx="25" cy="27" rx="13.5" ry="11.5" fill="${shellDark}"/>
+    <!-- shell grid lines (globe-like, matches reference) -->
+    <g stroke="${gridGreen}" stroke-width="1.1" fill="none" stroke-linecap="round">
+      <!-- vertical meridians -->
+      <path d="M25 15.7 Q25 27 25 38.3"/>
+      <path d="M18 16.5 Q15 27 18 37.5"/>
+      <path d="M32 16.5 Q35 27 32 37.5"/>
+      <!-- horizontal parallels -->
+      <path d="M12.5 23 Q25 20.5 37.5 23"/>
+      <path d="M11.8 27.5 Q25 25.5 38.2 27.5"/>
+      <path d="M12.5 32 Q25 30 37.5 32"/>
     </g>
+    <!-- shell text -->
+    <text x="25" y="${word.length <= 2 ? 29 : 28.5}" text-anchor="middle" dominant-baseline="middle"
+      font-size="${word.length <= 2 ? 7 : 5.5}" font-family="'Noto Serif TC','PMingLiU',serif"
+      fill="#fff" font-weight="700">${word}</text>
   </svg>`;
 }
 
