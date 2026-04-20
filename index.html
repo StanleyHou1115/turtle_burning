@@ -45,6 +45,54 @@
     color: #fff;
   }
 
+  /* ---------- style selector ---------- */
+  .style-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-family: inherit;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .style-controls .label {
+    font-size: 16px;
+    color: #555;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .style-btn {
+    padding: 8px 18px;
+    font-size: 15px;
+    font-family: inherit;
+    border: 2px solid #bbb;
+    border-radius: 20px;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .style-btn:hover:not(.active) {
+    border-color: #666;
+    color: #222;
+  }
+  .style-btn.active[data-style="classic"] {
+    border-color: #1f8a3a;
+    background: #1f8a3a;
+    color: #fff;
+  }
+  .style-btn.active[data-style="tech"] {
+    border-color: #00b8d4;
+    background: #006978;
+    color: #e0f7fa;
+    box-shadow: 0 0 10px rgba(0,229,255,.5);
+  }
+  .style-btn.active[data-style="q"] {
+    border-color: #ff6b9d;
+    background: #ff6b9d;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255,107,157,.4);
+  }
+
   /* ---------- A4 paper ---------- */
   .paper-wrapper {
     position: relative;
@@ -280,6 +328,13 @@
   <button class="btn-reset" onclick="resetPaper()">&#x21BB; 重新來過</button>
 </div>
 
+<div class="style-controls">
+  <span class="label">烏龜風格：</span>
+  <button class="style-btn active" data-style="classic" onclick="setStyle('classic')">&#x1F422; 經典</button>
+  <button class="style-btn" data-style="tech" onclick="setStyle('tech')">&#x1F916; 科技</button>
+  <button class="style-btn" data-style="q" onclick="setStyle('q')">&#x1F496; Q 版</button>
+</div>
+
 <div class="paper-wrapper">
   <div class="paper" id="paper">
     <!-- header left -->
@@ -437,49 +492,157 @@ function angleToSun(tx, ty, turtleSize) {
   return angle + 90;
 }
 
-// --- Cute turtle SVG generator (head at top = 0deg, rotation applied outside) ---
+// --- Current turtle style ---
+let currentStyle = 'classic';
+
+function setStyle(style) {
+  currentStyle = style;
+  document.querySelectorAll('.style-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.style === style);
+  });
+  placeTurtles();
+}
+
+// --- Turtle SVG dispatcher ---
 function turtleSVG(size, angleDeg, variant) {
+  if (currentStyle === 'tech') return techTurtleSVG(size, angleDeg, variant);
+  if (currentStyle === 'q')    return qTurtleSVG(size, angleDeg, variant);
+  return classicTurtleSVG(size, angleDeg, variant);
+}
+
+// --- Classic cartoon turtle (head at top = 0deg) ---
+function classicTurtleSVG(size, angleDeg, variant) {
   const r = angleDeg || 0;
   const shellWords = ['好天氣', '天晴', '大太陽', '放晴', '出太陽', '晴天'];
   const word = shellWords[variant % shellWords.length];
 
-  // Cartoon turtle palette (matches reference):
-  // dark shell green, light body green, grid-line green
   const shellDark = '#1f8a3a';
   const bodyGreen = '#a4cb4e';
   const gridGreen = '#4caf50';
 
   return `<svg width="${size}" height="${size}" viewBox="0 0 50 50" style="transform:rotate(${r}deg)">
-    <!-- tail -->
     <path d="M25 39 L23 44 L27 44 Z" fill="${bodyGreen}"/>
-    <!-- back legs -->
     <ellipse cx="13" cy="35" rx="4.2" ry="2.8" transform="rotate(35 13 35)" fill="${bodyGreen}"/>
     <ellipse cx="37" cy="35" rx="4.2" ry="2.8" transform="rotate(-35 37 35)" fill="${bodyGreen}"/>
-    <!-- front legs -->
     <ellipse cx="10" cy="20" rx="4.8" ry="3" transform="rotate(-30 10 20)" fill="${bodyGreen}"/>
     <ellipse cx="40" cy="20" rx="4.8" ry="3" transform="rotate(30 40 20)" fill="${bodyGreen}"/>
-    <!-- head -->
     <circle cx="25" cy="11" r="6.8" fill="${bodyGreen}"/>
-    <!-- eyes (simple black dots like reference) -->
     <circle cx="22.2" cy="10.5" r="1.2" fill="#111"/>
     <circle cx="27.8" cy="10.5" r="1.2" fill="#111"/>
-    <!-- dark shell base -->
     <ellipse cx="25" cy="27" rx="13.5" ry="11.5" fill="${shellDark}"/>
-    <!-- shell grid lines (globe-like, matches reference) -->
     <g stroke="${gridGreen}" stroke-width="1.1" fill="none" stroke-linecap="round">
-      <!-- vertical meridians -->
       <path d="M25 15.7 Q25 27 25 38.3"/>
       <path d="M18 16.5 Q15 27 18 37.5"/>
       <path d="M32 16.5 Q35 27 32 37.5"/>
-      <!-- horizontal parallels -->
       <path d="M12.5 23 Q25 20.5 37.5 23"/>
       <path d="M11.8 27.5 Q25 25.5 38.2 27.5"/>
       <path d="M12.5 32 Q25 30 37.5 32"/>
     </g>
-    <!-- shell text -->
     <text x="25" y="${word.length <= 2 ? 29 : 28.5}" text-anchor="middle" dominant-baseline="middle"
       font-size="${word.length <= 2 ? 7 : 5.5}" font-family="'Noto Serif TC','PMingLiU',serif"
       fill="#fff" font-weight="700">${word}</text>
+  </svg>`;
+}
+
+// --- Tech / cyberpunk turtle (metallic body, circuit shell, LED eyes) ---
+function techTurtleSVG(size, angleDeg, variant) {
+  const r = angleDeg || 0;
+  const shellWords = ['SUNNY', '晴天', 'CLEAR', '放晴', '☀ ON', '天晴'];
+  const word = shellWords[variant % shellWords.length];
+
+  const bodyDark   = '#2d3748';
+  const bodyMid    = '#4a5568';
+  const shellBase  = '#0f1419';
+  const shellEdge  = '#1a232e';
+  const neon       = '#00e5ff';
+  const uid = 'u' + variant;
+
+  return `<svg width="${size}" height="${size}" viewBox="0 0 50 50" style="transform:rotate(${r}deg)">
+    <defs>
+      <radialGradient id="${uid}_shell" cx="50%" cy="40%" r="65%">
+        <stop offset="0%" stop-color="${shellEdge}"/>
+        <stop offset="100%" stop-color="${shellBase}"/>
+      </radialGradient>
+      <filter id="${uid}_glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="0.6" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <path d="M25 39 L23 44 L27 44 Z" fill="${bodyDark}"/>
+    <rect x="8.5" y="32.5" width="9" height="5" rx="1.2" transform="rotate(35 13 35)" fill="${bodyMid}" stroke="${bodyDark}" stroke-width=".4"/>
+    <rect x="32.5" y="32.5" width="9" height="5" rx="1.2" transform="rotate(-35 37 35)" fill="${bodyMid}" stroke="${bodyDark}" stroke-width=".4"/>
+    <rect x="5" y="17.5" width="10" height="5.5" rx="1.3" transform="rotate(-30 10 20)" fill="${bodyMid}" stroke="${bodyDark}" stroke-width=".4"/>
+    <rect x="35" y="17.5" width="10" height="5.5" rx="1.3" transform="rotate(30 40 20)" fill="${bodyMid}" stroke="${bodyDark}" stroke-width=".4"/>
+    <rect x="18.5" y="5" width="13" height="12" rx="3" fill="${bodyDark}" stroke="${bodyMid}" stroke-width=".5"/>
+    <line x1="21" y1="7" x2="29" y2="7" stroke="${bodyMid}" stroke-width=".4"/>
+    <g filter="url(#${uid}_glow)">
+      <circle cx="22.2" cy="11" r="1.6" fill="${neon}"/>
+      <circle cx="27.8" cy="11" r="1.6" fill="${neon}"/>
+    </g>
+    <circle cx="22.2" cy="11" r="0.5" fill="#fff"/>
+    <circle cx="27.8" cy="11" r="0.5" fill="#fff"/>
+    <line x1="25" y1="5" x2="25" y2="2" stroke="${neon}" stroke-width=".6"/>
+    <circle cx="25" cy="1.6" r=".9" fill="${neon}" filter="url(#${uid}_glow)"/>
+    <polygon points="13,22 19,16.5 31,16.5 37,22 37,33 31,38 19,38 13,33"
+      fill="url(#${uid}_shell)" stroke="${neon}" stroke-width=".5" opacity=".95"/>
+    <g stroke="${neon}" stroke-width=".35" fill="none" opacity=".8">
+      <path d="M16 24 L19 24 L19 27 L22 27"/>
+      <path d="M34 24 L31 24 L31 27 L28 27"/>
+      <path d="M17 32 L21 32 M29 32 L33 32"/>
+      <path d="M25 17 L25 20 M25 35 L25 38"/>
+    </g>
+    <g fill="${neon}" opacity=".9">
+      <circle cx="19" cy="24" r=".55"/>
+      <circle cx="31" cy="24" r=".55"/>
+      <circle cx="22" cy="27" r=".55"/>
+      <circle cx="28" cy="27" r=".55"/>
+      <circle cx="21" cy="32" r=".4"/>
+      <circle cx="29" cy="32" r=".4"/>
+    </g>
+    <text x="25" y="${word.length <= 2 ? 29 : 28.5}" text-anchor="middle" dominant-baseline="middle"
+      font-size="${word.length <= 2 ? 6.5 : 4.2}" font-family="'Courier New','Consolas',monospace"
+      fill="${neon}" font-weight="700" letter-spacing=".3">${word}</text>
+  </svg>`;
+}
+
+// --- Q 版 turtle (big head, sparkle eyes, blush, heart shell) ---
+function qTurtleSVG(size, angleDeg, variant) {
+  const r = angleDeg || 0;
+  const shellWords = ['晴晴', '天晴', '放晴', '好晴', '萌晴', '萬晴'];
+  const word = shellWords[variant % shellWords.length];
+
+  const bodyPeach  = '#ffcc80';
+  const bodyPeachD = '#ffb74d';
+  const shellMint  = '#81c784';
+  const shellLight = '#c8e6c9';
+  const blush      = '#ff8a9a';
+  const heart      = '#ff6b9d';
+
+  return `<svg width="${size}" height="${size}" viewBox="0 0 50 50" style="transform:rotate(${r}deg)">
+    <ellipse cx="25" cy="43" rx="1.4" ry="2" fill="${bodyPeachD}"/>
+    <ellipse cx="11" cy="36" rx="3.6" ry="2.8" fill="${bodyPeach}" stroke="${bodyPeachD}" stroke-width=".4"/>
+    <ellipse cx="39" cy="36" rx="3.6" ry="2.8" fill="${bodyPeach}" stroke="${bodyPeachD}" stroke-width=".4"/>
+    <ellipse cx="9"  cy="24" rx="3.6" ry="2.8" fill="${bodyPeach}" stroke="${bodyPeachD}" stroke-width=".4"/>
+    <ellipse cx="41" cy="24" rx="3.6" ry="2.8" fill="${bodyPeach}" stroke="${bodyPeachD}" stroke-width=".4"/>
+    <ellipse cx="25" cy="32" rx="13" ry="10.5" fill="${shellMint}" stroke="#5ca05f" stroke-width=".6"/>
+    <ellipse cx="25" cy="29.5" rx="10" ry="6.5" fill="${shellLight}" opacity=".55"/>
+    <text x="18" y="27.5" text-anchor="middle" font-size="3.5" fill="${heart}" opacity=".85">&#x2665;</text>
+    <text x="32" y="27.5" text-anchor="middle" font-size="3.5" fill="${heart}" opacity=".85">&#x2665;</text>
+    <text x="25" y="38" text-anchor="middle" font-size="3" fill="${heart}" opacity=".8">&#x2665;</text>
+    <text x="25" y="32.5" text-anchor="middle" dominant-baseline="middle"
+      font-size="5.5" font-family="'Noto Serif TC','PMingLiU',serif"
+      fill="#fff" font-weight="900" stroke="#5ca05f" stroke-width=".3">${word}</text>
+    <circle cx="25" cy="13" r="10" fill="${bodyPeach}" stroke="${bodyPeachD}" stroke-width=".5"/>
+    <ellipse cx="17.2" cy="16.2" rx="2.2" ry="1.6" fill="${blush}" opacity=".75"/>
+    <ellipse cx="32.8" cy="16.2" rx="2.2" ry="1.6" fill="${blush}" opacity=".75"/>
+    <ellipse cx="21" cy="13" rx="1.9" ry="2.6" fill="#2b1e1a"/>
+    <ellipse cx="29" cy="13" rx="1.9" ry="2.6" fill="#2b1e1a"/>
+    <circle cx="21.6" cy="11.9" r="0.85" fill="#fff"/>
+    <circle cx="29.6" cy="11.9" r="0.85" fill="#fff"/>
+    <circle cx="20.3" cy="14"   r="0.35" fill="#fff"/>
+    <circle cx="28.3" cy="14"   r="0.35" fill="#fff"/>
+    <path d="M22.5 17.2 Q24 18.6 25 17.6 Q26 18.6 27.5 17.2"
+      fill="none" stroke="#6d4c41" stroke-width=".9" stroke-linecap="round"/>
   </svg>`;
 }
 
