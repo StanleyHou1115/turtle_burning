@@ -13,7 +13,28 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #f0e6d3;
+    background:
+      /* 沙灘紋理光點 */
+      radial-gradient(circle at 20% 92%, rgba(255,255,255,.25) 0 1px, transparent 2px),
+      radial-gradient(circle at 70% 88%, rgba(255,255,255,.2) 0 1px, transparent 2px),
+      radial-gradient(circle at 45% 96%, rgba(160,120,80,.25) 0 1px, transparent 2px),
+      radial-gradient(circle at 85% 94%, rgba(160,120,80,.2) 0 1px, transparent 2px),
+      /* 海浪白沫 */
+      radial-gradient(ellipse 60% 8px at 50% 72%, rgba(255,255,255,.55), transparent 70%),
+      radial-gradient(ellipse 50% 6px at 30% 74%, rgba(255,255,255,.4), transparent 70%),
+      radial-gradient(ellipse 55% 6px at 75% 73%, rgba(255,255,255,.4), transparent 70%),
+      /* 天空 → 海 → 沙灘 */
+      linear-gradient(
+        to bottom,
+        #a8dcf0 0%,      /* 遠空淡藍 */
+        #87ceeb 30%,     /* 天空藍 */
+        #4fb3d9 55%,     /* 海面亮藍 */
+        #2e86ab 68%,     /* 深海藍 */
+        #e8d4a0 72%,     /* 濕沙 */
+        #f4e4bc 85%,     /* 沙灘米黃 */
+        #e8d4a0 100%     /* 沙灘陰影 */
+      );
+    background-attachment: fixed;
     font-family: "Noto Serif TC", "PMingLiU", serif;
     padding: 20px;
     gap: 24px;
@@ -102,7 +123,32 @@
     position: relative;
     width: 960px;
     height: 680px;
-    background: #fff;
+    background:
+      /* 沙粒點綴 */
+      radial-gradient(circle at 15% 92%, rgba(255,255,255,.35) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 38% 96%, rgba(180,140,90,.35) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 62% 90%, rgba(255,255,255,.3) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 82% 94%, rgba(180,140,90,.3) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 25% 88%, rgba(180,140,90,.25) 0 1px, transparent 2px),
+      radial-gradient(circle at 72% 86%, rgba(255,255,255,.25) 0 1px, transparent 2px),
+      /* 浪花白沫 */
+      radial-gradient(ellipse 70% 6px at 50% 44%, rgba(255,255,255,.6), transparent 70%),
+      radial-gradient(ellipse 55% 5px at 25% 46%, rgba(255,255,255,.45), transparent 70%),
+      radial-gradient(ellipse 60% 5px at 78% 45%, rgba(255,255,255,.45), transparent 70%),
+      radial-gradient(ellipse 80% 4px at 50% 48%, rgba(255,255,255,.35), transparent 70%),
+      /* 天空 → 海 → 沙灘 */
+      linear-gradient(
+        to bottom,
+        #b8e4f2 0%,
+        #8dd0ec 20%,
+        #5ebadb 35%,
+        #2e86ab 43%,
+        #1e6b8e 47%,
+        #d9c088 50%,
+        #e8d4a0 60%,
+        #f4e4bc 80%,
+        #e8d4a0 100%
+      );
     border: 3px solid #333;
     padding: 36px 40px;
     overflow: hidden;
@@ -248,6 +294,27 @@
   .turtle {
     position: absolute;
     transition: transform .3s;
+    will-change: transform;
+  }
+  .turtle.crawling {
+    transition: transform 5s linear;
+  }
+  .turtle-facing {
+    display: inline-block;
+    line-height: 0;
+  }
+  .turtle-walk {
+    display: inline-block;
+    line-height: 0;
+    transform-origin: 50% 75%;
+  }
+  .turtle.crawling .turtle-walk {
+    animation: waddle .55s ease-in-out infinite;
+  }
+  @keyframes waddle {
+    0%   { transform: translateX(-2px) rotate(-7deg); }
+    50%  { transform: translateX( 2px) rotate( 7deg); }
+    100% { transform: translateX(-2px) rotate(-7deg); }
   }
 
   /* ---------- burning effect ---------- */
@@ -520,7 +587,7 @@ function classicTurtleSVG(size, angleDeg, variant) {
   const bodyGreen = '#a4cb4e';
   const gridGreen = '#4caf50';
 
-  return `<svg width="${size}" height="${size}" viewBox="0 0 50 50" style="transform:rotate(${r}deg)">
+  return `<svg width="${size}" height="${size}" viewBox="0 0 50 50">
     <path d="M25 39 L23 44 L27 44 Z" fill="${bodyGreen}"/>
     <ellipse cx="13" cy="35" rx="4.2" ry="2.8" transform="rotate(35 13 35)" fill="${bodyGreen}"/>
     <ellipse cx="37" cy="35" rx="4.2" ry="2.8" transform="rotate(-35 37 35)" fill="${bodyGreen}"/>
@@ -557,7 +624,7 @@ function techTurtleSVG(size, angleDeg, variant) {
   const neon       = '#00e5ff';
   const uid = 'u' + variant;
 
-  return `<svg width="${size}" height="${size}" viewBox="0 0 50 50" style="transform:rotate(${r}deg)">
+  return `<svg width="${size}" height="${size}" viewBox="0 0 50 50">
     <defs>
       <radialGradient id="${uid}_shell" cx="50%" cy="40%" r="65%">
         <stop offset="0%" stop-color="${shellEdge}"/>
@@ -618,7 +685,7 @@ function qTurtleSVG(size, angleDeg, variant) {
   const blush      = '#ff8a9a';
   const heart      = '#ff6b9d';
 
-  return `<svg width="${size}" height="${size}" viewBox="0 0 50 50" style="transform:rotate(${r}deg)">
+  return `<svg width="${size}" height="${size}" viewBox="0 0 50 50">
     <ellipse cx="25" cy="43" rx="1.4" ry="2" fill="${bodyPeachD}"/>
     <ellipse cx="11" cy="36" rx="3.6" ry="2.8" fill="${bodyPeach}" stroke="${bodyPeachD}" stroke-width=".4"/>
     <ellipse cx="39" cy="36" rx="3.6" ry="2.8" fill="${bodyPeach}" stroke="${bodyPeachD}" stroke-width=".4"/>
@@ -681,11 +748,42 @@ function placeTurtles() {
     div.className = 'turtle';
     div.style.left = x + 'px';
     div.style.top = y + 'px';
-    div.innerHTML = turtleSVG(size, angle, i);
+    const delay = (Math.random() * -0.55).toFixed(2);
+    div.innerHTML =
+      `<div class="turtle-facing" style="transform:rotate(${angle}deg)">` +
+        `<div class="turtle-walk" style="animation-delay:${delay}s">` +
+          turtleSVG(size, 0, i) +
+        `</div>` +
+      `</div>`;
     area.appendChild(div);
   }
 }
 placeTurtles();
+
+// --- Make all turtles slowly crawl toward the sun ---
+function crawlTurtlesToSun() {
+  const turtles = document.querySelectorAll('#turtlesArea .turtle');
+  turtles.forEach(t => {
+    const x = parseFloat(t.style.left) || 0;
+    const y = parseFloat(t.style.top) || 0;
+    const svg = t.querySelector('svg');
+    const size = svg ? parseFloat(svg.getAttribute('width')) : 60;
+    // Sun center in turtles-area local coords (area offset: top 220, left 0)
+    const sunLocalX = SUN_X - size / 2;
+    const sunLocalY = (SUN_Y - 220) - size / 2;
+    const dx = sunLocalX - x;
+    const dy = sunLocalY - y;
+    // Crawl 35% of the way toward the sun over the burn duration
+    const frac = 0.35;
+    const tx = dx * frac;
+    const ty = dy * frac;
+    t.classList.add('crawling');
+    // Double rAF to ensure class/transition is applied before transform
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      t.style.transform = `translate(${tx}px, ${ty}px)`;
+    }));
+  });
+}
 
 // --- Replay "烏雲退散" animation only (without burn) ---
 function playClouds() {
@@ -715,6 +813,9 @@ function startBurn() {
   // Trigger 烏雲退散 at the same time as the burn
   const cloudsLayer = document.getElementById('cloudsLayer');
   if (cloudsLayer) cloudsLayer.classList.add('dispersing');
+
+  // Turtles slowly crawl toward the sun during the burn
+  crawlTurtlesToSun();
 
   const paper = document.getElementById('paper');
   paper.classList.add('sun-shining');
