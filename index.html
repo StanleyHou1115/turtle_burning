@@ -179,30 +179,39 @@
   /* ---------- form fields ---------- */
   .info-fields {
     position: absolute;
-    top: 28px;
-    right: 36px;
+    bottom: 28px;
+    right: 28px;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    z-index: 5;
+    z-index: 10;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(70,120,160,.78), rgba(40,80,120,.82));
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    backdrop-filter: blur(2px);
   }
   .info-fields label {
     font-size: 16px;
     font-weight: 600;
-    color: #222;
+    color: #fff;
     display: flex;
     align-items: center;
     gap: 4px;
   }
   .info-fields input {
     border: none;
-    border-bottom: 1.5px solid #999;
+    border-bottom: 1.5px solid rgba(255,255,255,.6);
     outline: none;
     font-size: 15px;
     font-family: inherit;
     padding: 2px 4px;
     width: 150px;
     background: transparent;
+    color: #fff;
+  }
+  .info-fields input::placeholder {
+    color: rgba(255,255,255,.65);
   }
 
   /* ---------- sun ---------- */
