@@ -117,6 +117,8 @@
   /* ---------- A4 paper ---------- */
   .paper-wrapper {
     position: relative;
+    width: var(--paper-wrapper-width, 960px);
+    height: var(--paper-wrapper-height, 680px);
     perspective: 800px;
   }
   .paper {
@@ -152,7 +154,8 @@
     border: 3px solid #333;
     padding: 36px 40px;
     overflow: hidden;
-    transform-origin: center center;
+    transform: scale(var(--paper-scale, 1));
+    transform-origin: top left;
     transition: filter .3s;
   }
 
@@ -190,6 +193,8 @@
     background: linear-gradient(135deg, rgba(70,120,160,.78), rgba(40,80,120,.82));
     box-shadow: 0 4px 14px rgba(0,0,0,.25);
     backdrop-filter: blur(2px);
+    transform: scale(var(--paper-inverse-scale, 1));
+    transform-origin: bottom right;
   }
   .info-fields label {
     font-size: 16px;
@@ -378,8 +383,8 @@
     display: flex;
   }
   .ash-pile-visual {
-    width: 960px;
-    height: 200px;
+    width: var(--paper-wrapper-width, 960px);
+    height: var(--ash-visual-height, 200px);
     position: relative;
     overflow: hidden;
   }
@@ -549,6 +554,17 @@
 </div>
 
 <script>
+function updatePaperScale() {
+  const scale = Math.min(1, Math.max(0, (document.documentElement.clientWidth - 40) / 960));
+  document.documentElement.style.setProperty('--paper-scale', scale);
+  document.documentElement.style.setProperty('--paper-inverse-scale', scale ? 1 / scale : 1);
+  document.documentElement.style.setProperty('--paper-wrapper-width', `${960 * scale}px`);
+  document.documentElement.style.setProperty('--paper-wrapper-height', `${680 * scale}px`);
+  document.documentElement.style.setProperty('--ash-visual-height', `${200 * scale}px`);
+}
+updatePaperScale();
+window.addEventListener('resize', updatePaperScale);
+
 // --- Sun center position (relative to paper) ---
 // Sun is at paper center-x, ~160px from top of paper
 const SUN_X = 480;
@@ -727,29 +743,19 @@ function placeTurtles() {
   const area = document.getElementById('turtlesArea');
   area.innerHTML = '';
   const count = 66;
-  const positions = [];
+  const columns = 11;
+  const rows = 6;
+  const cellWidth = 900 / columns;
+  const cellHeight = 410 / rows;
 
   for (let i = 0; i < count; i++) {
-    const size = 50 + Math.random() * 30;
-    const radius = size / 2;
-    let x, y, attempts = 0;
-    let placed = false;
-    do {
-      x = Math.random() * (900 - size) + 15;
-      y = Math.random() * (410 - size) + 10;
-      attempts++;
-      const cx = x + radius;
-      const cy = y + radius;
-      const overlaps = positions.some(p => {
-        const dx = p.cx - cx;
-        const dy = p.cy - cy;
-        const minDist = p.r + radius + 4; // 4px gap
-        return (dx * dx + dy * dy) < (minDist * minDist);
-      });
-      if (!overlaps) { placed = true; break; }
-    } while (attempts < 200);
-    if (!placed) continue; // skip if can't find space
-    positions.push({ x, y, cx: x + radius, cy: y + radius, r: radius, size });
+    const size = 50 + Math.random() * 14;
+    const column = i % columns;
+    const row = Math.floor(i / columns);
+    const horizontalSlack = cellWidth - size - 4;
+    const verticalSlack = cellHeight - size - 4;
+    const x = 15 + column * cellWidth + (cellWidth - size) / 2 + (Math.random() - 0.5) * horizontalSlack;
+    const y = 10 + row * cellHeight + (cellHeight - size) / 2 + (Math.random() - 0.5) * verticalSlack;
 
     const angle = angleToSun(x, y, size);
 
@@ -1158,14 +1164,15 @@ function crumblePaper() {
   for (let i = 0; i < pieceCount; i++) {
     const piece = document.createElement('div');
     piece.className = 'ash-piece';
-    const w = Math.random() * 40 + 10;
-    const h = Math.random() * 8 + 2;
-    const x = Math.random() * 920 + 20;
+    const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--paper-scale')) || 1;
+    const w = (Math.random() * 40 + 10) * scale;
+    const h = (Math.random() * 8 + 2) * scale;
+    const x = (Math.random() * 920 + 20) * scale;
     const gray = Math.random() * 50 + 20;
     piece.style.width = w + 'px';
     piece.style.height = h + 'px';
     piece.style.left = x + 'px';
-    piece.style.bottom = (Math.random() * 60 + 10) + 'px';
+    piece.style.bottom = (Math.random() * 60 + 10) * scale + 'px';
     piece.style.background = `rgb(${gray},${gray},${gray})`;
     piece.style.borderRadius = Math.random() * 4 + 'px';
     piece.style.transform = `rotate(${Math.random() * 180}deg)`;
@@ -1174,7 +1181,7 @@ function crumblePaper() {
 
   // Animate paper crumbling and ash pile appearing
   paper.style.transition = 'transform 1.5s ease-in, opacity 1.5s ease-in';
-  paper.style.transform = 'scale(0.3) translateY(100px)';
+  paper.style.transform = 'scale(var(--paper-scale, 1)) scale(0.3) translateY(100px)';
   paper.style.opacity = '0';
 
   setTimeout(() => {
